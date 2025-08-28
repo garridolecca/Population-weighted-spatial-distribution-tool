@@ -2,7 +2,7 @@
 
 ## Overview
 
-This ArcGIS Pro tool solves a common problem in spatial analysis: **messy address data that gets clustered at zip code centroids**. When addresses are incomplete, geocoders often default to placing points at the zip code's center, creating misleading 'superclusters' that completely hide the true spatial distribution of the data.
+This ArcGIS Pro tool solves a common problem in spatial analysis: **messy, incomplete, or anonymized addresses data that gets clustered at zip code centroids**. When addresses are incomplete, geocoders often default to placing points at the zip code's center, creating misleading 'superclusters' that completely hide the true spatial distribution of the data.
 
 ## The Problem
 
