@@ -6,7 +6,6 @@ This ArcGIS Pro tool solves a common problem in spatial analysis: **messy addres
 
 ## The Problem
 
-![Before Example](https://via.placeholder.com/400x300/ff6b6b/ffffff?text=Before:+30+Points+at+Zip+Centroid)
 
 When addresses are incomplete, geocoders often default to placing a point at the zipcode's center. This creates misleading 'superclusters' on the map and completely hides the true spatial distribution of the data. (In this example: 30 points in a zip code centroid)
 
@@ -22,11 +21,9 @@ The workflow uses the "Create Spatial Sampling Location" tool, configured for st
 2. **Telling** the tool how many new points to generate
 3. **Transferring** the original attributes to these new, more realistic locations
 
-![Tool Interface](https://via.placeholder.com/400x300/4ecdc4/ffffff?text=ArcGIS+Pro+Tool+Interface)
 
 ## The Result
 
-![After Example](https://via.placeholder.com/400x300/45b7d1/ffffff?text=After:+30+Points+Distributed+Realistically)
 
 We go from 30 points stacked on one meaningless centroid to 30 points distributed realistically across the area, providing a much more accurate foundation for analysis.
 
