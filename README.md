@@ -25,7 +25,7 @@ The workflow uses the "Create Spatial Sampling Location" tool, configured for st
 ## The Result
 
 
-We go from 30 points stacked on one meaningless centroid to 30 points distributed realistically across the area, providing a much more accurate foundation for analysis.
+We go from  points stacked on one meaningless centroid to  points distributed realistically across the area, providing a much more accurate foundation for analysis.
 
 ## Features
 
