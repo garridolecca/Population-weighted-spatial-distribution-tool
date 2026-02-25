@@ -70,7 +70,8 @@ class DistributePointsByPopulation:
         arcpy.env.workspace = workspace
         arcpy.env.overwriteOutput = True
         
-        study_area_fc = os.path.join(workspace, "intermediate_precise_study_area")
+        # Performance Optimization: Use memory workspace to avoid disk I/O for intermediate data
+        study_area_fc = r"memory\intermediate_precise_study_area"
         join_id_field = "TEMP_JOIN_ID_XYZ"
 
         try:
@@ -102,8 +103,11 @@ class DistributePointsByPopulation:
                     messages.addError("The web query returned no features for the given extent. Tool cannot continue.")
                     return
                 
-                intermediate_web_results = os.path.join(workspace, "intermediate_web_results")
-                queried_featureset.save(save_location=workspace, out_name=os.path.basename(intermediate_web_results))
+                # Performance Optimization: Use scratchGDB (if available) for better performance than shapefiles
+                save_loc = arcpy.env.scratchGDB if arcpy.env.scratchGDB else workspace
+                intermediate_web_results_name = "intermediate_web_results"
+                intermediate_web_results = os.path.join(save_loc, intermediate_web_results_name)
+                queried_featureset.save(save_location=save_loc, out_name=intermediate_web_results_name)
                 
                 # 1b. Perform precise intersect locally
                 messages.addMessage("Performing precise local intersection...")
