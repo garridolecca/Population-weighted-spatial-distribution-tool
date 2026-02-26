@@ -139,27 +139,67 @@ class DistributePointsByPopulation:
 
             # --- Step 4: Transfer Attributes to New Points ---
             messages.addMessage("Step 4: Transferring attributes.")
-            # Programmatically get the OID field name for both layers to support shapefiles and geodatabases
-            oid_field_in = arcpy.Describe(in_points_fc).OIDFieldName
-            oid_field_out = arcpy.Describe(out_features_fc).OIDFieldName
             
-            arcpy.management.AddField(in_points_fc, join_id_field, "LONG")
-            arcpy.management.AddField(out_features_fc, join_id_field, "LONG")
-            arcpy.management.CalculateField(in_points_fc, join_id_field, f"!{oid_field_in}!", "PYTHON3")
-            arcpy.management.CalculateField(out_features_fc, join_id_field, f"!{oid_field_out}!", "PYTHON3")
+            # Identify fields to transfer (exclude required fields like OID and Shape)
+            fields_to_transfer = [f for f in arcpy.ListFields(in_points_fc) if not f.required]
+            field_names = [f.name for f in fields_to_transfer]
             
-            fields_to_join = [f.name for f in arcpy.ListFields(in_points_fc) if not f.required and f.name != join_id_field]
-            arcpy.management.JoinField(
-                in_data=out_features_fc, in_field=join_id_field,
-                join_table=in_points_fc, join_field=join_id_field,
-                fields=fields_to_join
-            )
+            # Add fields to the output feature class
+            for field in fields_to_transfer:
+                # Map field type to AddField parameters
+                # Note: This is a simplified mapping. For production, more detailed type handling might be needed.
+
+                # Mapping from Describe/ListFields type to AddField type
+                # https://pro.arcgis.com/en/pro-app/latest/tool-reference/data-management/add-field.htm
+                type_mapping = {
+                    "SmallInteger": "SHORT",
+                    "Integer": "LONG",
+                    "Single": "FLOAT",
+                    "Double": "DOUBLE",
+                    "String": "TEXT",
+                    "Date": "DATE",
+                    "Blob": "BLOB",
+                    "Raster": "RASTER",
+                    "GUID": "GUID",
+                    "GlobalID": "GUID" # GlobalID is usually system managed, but if transferring, GUID is safest
+                }
+
+                field_type = type_mapping.get(field.type, "TEXT") # Default to TEXT if unknown
+                nullable_string = "NULLABLE" if field.isNullable else "NON_NULLABLE"
+
+                arcpy.management.AddField(
+                    out_features_fc,
+                    field_name=field.name,
+                    field_type=field_type,
+                    field_precision=field.precision,
+                    field_scale=field.scale,
+                    field_length=field.length,
+                    field_alias=field.aliasName,
+                    field_is_nullable=nullable_string
+                )
+
+            # Use cursors to transfer attributes row by row
+            # This avoids modifying the input dataset with a JoinID field and is generally faster and safer
+            if field_names:
+                with arcpy.da.SearchCursor(in_points_fc, field_names) as search_cursor, \
+                     arcpy.da.UpdateCursor(out_features_fc, field_names) as update_cursor:
+
+                    # Zip the cursors to iterate them in parallel
+                    # This assumes the order of features is preserved or matches.
+                    # CreateSpatialSamplingLocations generally creates features in a predictable order relative to the count,
+                    # but if there's mismatch in count or order, this needs caution.
+                    # However, the previous implementation assumed 1:1 match via OID-based JoinID calculation on the fly,
+                    # which effectively relied on the same assumption (row N in input maps to row N in output).
+
+                    for search_row, update_row in zip(search_cursor, update_cursor):
+                        # Update the output row with values from the input row
+                        update_row = search_row
+                        update_cursor.updateRow(update_row)
+
             messages.addMessage("Attribute transfer complete.")
 
             # --- Step 5: Final Cleanup ---
             messages.addMessage("Step 5: Cleaning up intermediate data...")
-            arcpy.management.DeleteField(out_features_fc, join_id_field)
-            arcpy.management.DeleteField(in_points_fc, join_id_field)
             arcpy.management.Delete(study_area_fc)
             messages.addMessage("Cleanup complete.")
             messages.addMessage("\n--- WORKFLOW FINISHED ---")
