@@ -71,6 +71,7 @@ class DistributePointsByPopulation:
         arcpy.env.overwriteOutput = True
         
         study_area_fc = os.path.join(workspace, "intermediate_precise_study_area")
+        intermediate_web_results = os.path.join(workspace, "intermediate_web_results")
         join_id_field = "TEMP_JOIN_ID_XYZ"
 
         try:
@@ -102,15 +103,11 @@ class DistributePointsByPopulation:
                     messages.addError("The web query returned no features for the given extent. Tool cannot continue.")
                     return
                 
-                intermediate_web_results = os.path.join(workspace, "intermediate_web_results")
                 queried_featureset.save(save_location=workspace, out_name=os.path.basename(intermediate_web_results))
                 
                 # 1b. Perform precise intersect locally
                 messages.addMessage("Performing precise local intersection...")
                 arcpy.analysis.Intersect([in_aoi_fc, intermediate_web_results], study_area_fc, "ALL", output_type="INPUT")
-                
-                # Clean up the intermediate extent-based layer
-                arcpy.management.Delete(intermediate_web_results)
             
             messages.addMessage("Study area created successfully.")
 
@@ -156,17 +153,41 @@ class DistributePointsByPopulation:
             )
             messages.addMessage("Attribute transfer complete.")
 
-            # --- Step 5: Final Cleanup ---
-            messages.addMessage("Step 5: Cleaning up intermediate data...")
-            arcpy.management.DeleteField(out_features_fc, join_id_field)
-            arcpy.management.DeleteField(in_points_fc, join_id_field)
-            arcpy.management.Delete(study_area_fc)
-            messages.addMessage("Cleanup complete.")
             messages.addMessage("\n--- WORKFLOW FINISHED ---")
 
         except arcpy.ExecuteError:
             messages.addError(arcpy.GetMessages(2))
         except Exception as e:
             messages.addError(f"A non-tool error occurred: {e}")
+        finally:
+            # --- Step 5: Final Cleanup ---
+            messages.addMessage("Step 5: Cleaning up intermediate data...")
+
+            # Use separate try-except blocks for each to ensure all cleanup is attempted
+            try:
+                if arcpy.Exists(out_features_fc) and arcpy.ListFields(out_features_fc, join_id_field):
+                    arcpy.management.DeleteField(out_features_fc, join_id_field)
+            except:
+                pass
+
+            try:
+                if arcpy.Exists(in_points_fc) and arcpy.ListFields(in_points_fc, join_id_field):
+                    arcpy.management.DeleteField(in_points_fc, join_id_field)
+            except:
+                pass
+
+            try:
+                if arcpy.Exists(study_area_fc):
+                    arcpy.management.Delete(study_area_fc)
+            except:
+                pass
+
+            try:
+                if arcpy.Exists(intermediate_web_results):
+                    arcpy.management.Delete(intermediate_web_results)
+            except:
+                pass
+
+            messages.addMessage("Cleanup complete.")
         
         return
