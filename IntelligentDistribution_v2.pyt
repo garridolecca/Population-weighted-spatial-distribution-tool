@@ -70,7 +70,8 @@ class DistributePointsByPopulation:
         arcpy.env.workspace = workspace
         arcpy.env.overwriteOutput = True
         
-        study_area_fc = os.path.join(workspace, "intermediate_precise_study_area")
+        # ⚡ Bolt: Use memory workspace for intermediate study area to reduce disk I/O
+        study_area_fc = "memory\\intermediate_precise_study_area"
         join_id_field = "TEMP_JOIN_ID_XYZ"
 
         try:
@@ -96,14 +97,19 @@ class DistributePointsByPopulation:
                 
                 gis = GIS("pro")
                 web_layer = FeatureLayer(web_census_url)
-                queried_featureset = web_layer.query(geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'})
+                # ⚡ Bolt: Limit data retrieval to only the necessary population field to reduce network load and latency
+                queried_featureset = web_layer.query(
+                    geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'},
+                    out_fields=population_field
+                )
                 
                 if len(queried_featureset.features) == 0:
                     messages.addError("The web query returned no features for the given extent. Tool cannot continue.")
                     return
                 
-                intermediate_web_results = os.path.join(workspace, "intermediate_web_results")
-                queried_featureset.save(save_location=workspace, out_name=os.path.basename(intermediate_web_results))
+                # ⚡ Bolt: Use scratchGDB for temporary persistent files to optimize disk I/O
+                intermediate_web_results = os.path.join(arcpy.env.scratchGDB, "intermediate_web_results")
+                queried_featureset.save(save_location=arcpy.env.scratchGDB, out_name="intermediate_web_results")
                 
                 # 1b. Perform precise intersect locally
                 messages.addMessage("Performing precise local intersection...")
