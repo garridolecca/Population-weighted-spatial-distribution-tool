@@ -1,0 +1,3 @@
+## 2024-05-24 - [Minimize Web Service Payload & Disk I/O in ArcGIS Toolboxes]
+**Learning:** Fetching all fields from an `arcgis.features.FeatureLayer` over the network drastically increases latency, especially with dense polygon layers like census data. In addition, writing intermediate geoprocessing outputs to the output workspace causes unnecessary disk I/O bottlenecks.
+**Action:** Always constrain `FeatureLayer.query()` to essential fields using the `out_fields` parameter. Route intermediate files (like temporary spatial intersections) to `arcpy.env.scratchGDB` or the `memory` workspace instead of persistent project folders.
