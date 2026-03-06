@@ -1,0 +1,3 @@
+## 2024-05-15 - [Optimize ArcGIS web service queries with out_fields]
+**Learning:** By default, ArcGIS Python API `FeatureLayer.query()` retrieves all columns (fields) from the dataset. For data-rich layers like census blocks, which have hundreds of demographic attributes, this massive payload unnecessarily clogs up the network, leading to slow query times and high memory usage, especially since we only use the geometry and a single population field.
+**Action:** When working with `arcgis.features.FeatureLayer` to query features from a web service, always explicitly pass the `out_fields` argument to limit data retrieval only to the attributes necessary for the current task.
