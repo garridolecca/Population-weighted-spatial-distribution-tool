@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize ArcGIS Web Service Queries]
+**Learning:** When querying ArcGIS REST web services using `arcgis.features.FeatureLayer.query()`, omitting the `out_fields` parameter causes the service to return all available attributes for the queried features. This leads to unnecessarily large payloads, increasing network latency and memory usage, especially for layers with many fields.
+**Action:** Always specify the `out_fields` parameter when querying web services to limit the retrieved data to only the fields necessary for the immediate operation, thereby reducing network overhead and improving execution speed.
