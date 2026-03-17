@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize Arcgis FeatureLayer Query Payload]
+**Learning:** `arcgis.features.FeatureLayer` query operations retrieve all attributes by default if `out_fields` is omitted. When working with large datasets like census blocks over web services, retrieving all fields causes a severe network bottleneck that significantly slows down script execution.
+**Action:** Always include the `out_fields` parameter in FeatureLayer queries to explicitly request only the required fields (e.g. `population_field`) when interacting with ArcGIS REST or Online services. This dramatically reduces network payload and latency.
