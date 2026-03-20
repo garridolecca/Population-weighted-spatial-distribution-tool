@@ -70,7 +70,9 @@ class DistributePointsByPopulation:
         arcpy.env.workspace = workspace
         arcpy.env.overwriteOutput = True
         
-        study_area_fc = os.path.join(workspace, "intermediate_precise_study_area")
+        # ⚡ Bolt Optimization: Use 'memory' workspace for intermediate feature classes to reduce disk I/O
+        study_area_fc = "memory\\intermediate_precise_study_area"
+        intermediate_web_results = None
         join_id_field = "TEMP_JOIN_ID_XYZ"
 
         try:
@@ -96,21 +98,26 @@ class DistributePointsByPopulation:
                 
                 gis = GIS("pro")
                 web_layer = FeatureLayer(web_census_url)
-                queried_featureset = web_layer.query(geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'})
+                # ⚡ Bolt Optimization: Use out_fields to limit data retrieval to only the required population field.
+                # This significantly reduces network load, latency, and memory consumption.
+                queried_featureset = web_layer.query(
+                    geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'},
+                    out_fields=population_field
+                )
                 
                 if len(queried_featureset.features) == 0:
                     messages.addError("The web query returned no features for the given extent. Tool cannot continue.")
                     return
                 
-                intermediate_web_results = os.path.join(workspace, "intermediate_web_results")
-                queried_featureset.save(save_location=workspace, out_name=os.path.basename(intermediate_web_results))
+                # ⚡ Bolt Optimization: Save to arcpy.env.scratchGDB for temporary persistent files
+                intermediate_web_results = os.path.join(arcpy.env.scratchGDB, "intermediate_web_results")
+                queried_featureset.save(save_location=arcpy.env.scratchGDB, out_name="intermediate_web_results")
                 
                 # 1b. Perform precise intersect locally
                 messages.addMessage("Performing precise local intersection...")
                 arcpy.analysis.Intersect([in_aoi_fc, intermediate_web_results], study_area_fc, "ALL", output_type="INPUT")
                 
-                # Clean up the intermediate extent-based layer
-                arcpy.management.Delete(intermediate_web_results)
+                # ⚡ Bolt Optimization: Cleanup handled in finally block
             
             messages.addMessage("Study area created successfully.")
 
@@ -156,17 +163,33 @@ class DistributePointsByPopulation:
             )
             messages.addMessage("Attribute transfer complete.")
 
-            # --- Step 5: Final Cleanup ---
-            messages.addMessage("Step 5: Cleaning up intermediate data...")
-            arcpy.management.DeleteField(out_features_fc, join_id_field)
-            arcpy.management.DeleteField(in_points_fc, join_id_field)
-            arcpy.management.Delete(study_area_fc)
-            messages.addMessage("Cleanup complete.")
             messages.addMessage("\n--- WORKFLOW FINISHED ---")
 
         except arcpy.ExecuteError:
             messages.addError(arcpy.GetMessages(2))
         except Exception as e:
             messages.addError(f"A non-tool error occurred: {e}")
+        finally:
+            # --- Step 5: Final Cleanup ---
+            messages.addMessage("Step 5: Cleaning up intermediate data...")
+            # Verify existence before deleting fields
+            if out_features_fc and arcpy.Exists(out_features_fc):
+                field_names_out = [f.name for f in arcpy.ListFields(out_features_fc)]
+                if join_id_field in field_names_out:
+                    arcpy.management.DeleteField(out_features_fc, join_id_field)
+
+            if in_points_fc and arcpy.Exists(in_points_fc):
+                field_names_in = [f.name for f in arcpy.ListFields(in_points_fc)]
+                if join_id_field in field_names_in:
+                    arcpy.management.DeleteField(in_points_fc, join_id_field)
+
+            # Verify existence before deleting datasets
+            if study_area_fc and arcpy.Exists(study_area_fc):
+                arcpy.management.Delete(study_area_fc)
+
+            if intermediate_web_results and arcpy.Exists(intermediate_web_results):
+                arcpy.management.Delete(intermediate_web_results)
+
+            messages.addMessage("Cleanup complete.")
         
         return
