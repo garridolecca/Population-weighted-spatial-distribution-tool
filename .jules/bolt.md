@@ -1,0 +1,3 @@
+## 2024-05-18 - [Web Query Optimization]
+**Learning:** When querying ArcGIS web services, defaulting to retrieving all fields for large datasets like census data severely degrades performance due to massive network payloads and latency, even when filtering by extent.
+**Action:** Always utilize the `out_fields` parameter in `arcgis.features.FeatureLayer.query()` to explicitly limit data retrieval to only the necessary attributes.
