@@ -1,0 +1,3 @@
+## 2024-05-24 - [Minimize Web Service Payload]
+**Learning:** `FeatureLayer.query()` from the arcgis Python API defaults to returning all fields (`out_fields='*'`) from the web service. For complex datasets like census data which often contain hundreds of fields, this causes severe network bottlenecks, increased memory usage, and significantly slower execution times even when filtering by geometry.
+**Action:** Always explicitly specify `out_fields` in `FeatureLayer.query()` to request only the fields necessary for the specific analysis or operation.
