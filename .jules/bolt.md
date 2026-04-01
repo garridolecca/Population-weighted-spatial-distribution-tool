@@ -1,0 +1,3 @@
+## 2024-05-14 - [ArcGIS FeatureLayer Query Optimization]
+**Learning:** When querying web services via `arcgis.features.FeatureLayer`, the API fetches all fields by default, which can cause significant over-fetching, increased network payload size, and higher latency, especially when dealing with census data or other wide datasets.
+**Action:** Always use the `out_fields` parameter in `query` calls to limit data retrieval to only the necessary attributes.
