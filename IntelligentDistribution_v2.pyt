@@ -72,6 +72,7 @@ class DistributePointsByPopulation:
         
         study_area_fc = os.path.join(workspace, "intermediate_precise_study_area")
         join_id_field = "TEMP_JOIN_ID_XYZ"
+        intermediate_web_results = None
 
         try:
             messages.addMessage("--- Workflow Started ---")
@@ -96,7 +97,11 @@ class DistributePointsByPopulation:
                 
                 gis = GIS("pro")
                 web_layer = FeatureLayer(web_census_url)
-                queried_featureset = web_layer.query(geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'})
+                # ⚡ Bolt: Use out_fields to limit data retrieval from the web service to only the necessary population field, significantly reducing network payload and latency.
+                queried_featureset = web_layer.query(
+                    geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'},
+                    out_fields=population_field
+                )
                 
                 if len(queried_featureset.features) == 0:
                     messages.addError("The web query returned no features for the given extent. Tool cannot continue.")
@@ -108,9 +113,6 @@ class DistributePointsByPopulation:
                 # 1b. Perform precise intersect locally
                 messages.addMessage("Performing precise local intersection...")
                 arcpy.analysis.Intersect([in_aoi_fc, intermediate_web_results], study_area_fc, "ALL", output_type="INPUT")
-                
-                # Clean up the intermediate extent-based layer
-                arcpy.management.Delete(intermediate_web_results)
             
             messages.addMessage("Study area created successfully.")
 
@@ -158,15 +160,32 @@ class DistributePointsByPopulation:
 
             # --- Step 5: Final Cleanup ---
             messages.addMessage("Step 5: Cleaning up intermediate data...")
-            arcpy.management.DeleteField(out_features_fc, join_id_field)
-            arcpy.management.DeleteField(in_points_fc, join_id_field)
-            arcpy.management.Delete(study_area_fc)
-            messages.addMessage("Cleanup complete.")
+            # Cleanup is now handled in the finally block
             messages.addMessage("\n--- WORKFLOW FINISHED ---")
 
         except arcpy.ExecuteError:
             messages.addError(arcpy.GetMessages(2))
         except Exception as e:
             messages.addError(f"A non-tool error occurred: {e}")
+
+        finally:
+            messages.addMessage("Cleaning up intermediate data...")
+            if arcpy.Exists(study_area_fc):
+                arcpy.management.Delete(study_area_fc)
+            if intermediate_web_results and arcpy.Exists(intermediate_web_results):
+                arcpy.management.Delete(intermediate_web_results)
+
+            if in_points_fc and arcpy.Exists(in_points_fc):
+                try:
+                    if any(f.name == join_id_field for f in arcpy.ListFields(in_points_fc)):
+                        arcpy.management.DeleteField(in_points_fc, join_id_field)
+                except Exception:
+                    pass
+            if out_features_fc and arcpy.Exists(out_features_fc):
+                try:
+                    if any(f.name == join_id_field for f in arcpy.ListFields(out_features_fc)):
+                        arcpy.management.DeleteField(out_features_fc, join_id_field)
+                except Exception:
+                    pass
         
         return
