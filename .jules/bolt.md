@@ -1,0 +1,3 @@
+## 2026-04-06 - [ArcGIS Web Service Payload Reduction]
+**Learning:** In ArcGIS tool development, querying web services via `arcgis.features.FeatureLayer` defaults to retrieving all fields. Explicitly using the `out_fields` parameter significantly reduces network payload and latency, which is critical for performance. Additionally, ensuring temporary dataset variables are declared early and cleaned up in a `finally` block avoids resource leaks.
+**Action:** Always use `out_fields` in `FeatureLayer.query()` to limit data to required fields, and enforce `finally` block cleanups for all temporary data in `.pyt` files.
