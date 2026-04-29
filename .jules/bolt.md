@@ -1,0 +1,3 @@
+## 2026-04-29 - [Limit API Payload & Optimize I/O]
+**Learning:** In ArcGIS tool development, web service queries using `arcgis.features.FeatureLayer` can default to fetching all fields, causing unnecessary network payload. Additionally, using standard file paths for temporary feature classes increases disk I/O compared to using the `memory` workspace or `scratchGDB`.
+**Action:** Always use the `out_fields` parameter in `web_layer.query()` to limit data retrieval. Ensure temporary variables are initialized at the start of the `execute` method, use `memory` for intermediate features, and relocate cleanup logic to a `finally` block with existence checks to prevent resource leakage.
