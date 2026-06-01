@@ -1,0 +1,3 @@
+## 2026-06-01 - [Limit Web Service Query Attributes]
+**Learning:** In ArcGIS tool development, querying web services (`arcgis.features.FeatureLayer`) without specifying `out_fields` retrieves all attributes. When only the geometry and a specific field (like `population_field`) are needed for spatial operations and attribute transfer, retrieving everything causes unnecessary network load, increased memory consumption, and slower tool execution. This is a critical codebase-specific performance pattern to watch out for.
+**Action:** When querying web services via `arcgis.features.FeatureLayer`, always use the `out_fields` parameter to limit data retrieval to only necessary attributes (e.g., `out_fields=population_field`), reducing network load and latency.
