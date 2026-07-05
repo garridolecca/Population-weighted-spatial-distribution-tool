@@ -1,0 +1,3 @@
+## 2026-07-05 - Optimize ArcGIS FeatureLayer Queries with out_fields
+**Learning:** By default, arcgis.features.FeatureLayer.query() retrieves all fields if out_fields is not specified. When dealing with web feature services, this can cause significant network latency and memory usage, especially for layers with many attributes (like census data). The 'returnGeometry' parameter defaults to True, so spatial geometry data is still safely returned alongside explicitly requested attributes.
+**Action:** Always utilize the 'out_fields' parameter when querying FeatureLayers to limit data retrieval only to the necessary attributes, reducing the network payload size.
