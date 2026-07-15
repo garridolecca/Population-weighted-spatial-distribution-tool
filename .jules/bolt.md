@@ -1,0 +1,3 @@
+## 2026-07-15 - Optimize ArcGIS FeatureLayer Queries
+**Learning:** By default, ArcGIS FeatureLayer queries may fetch all fields from a web service, which can cause significant performance bottlenecks when querying large datasets like Census Blocks. Using the `out_fields` parameter restricts the returned attributes while `returnGeometry` defaults to `True`, safely preserving the spatial data needed for intersection and sampling.
+**Action:** Always specify the exact required fields (e.g., `out_fields=population_field`) when querying ArcGIS FeatureLayers to minimize payload size and improve execution time.
