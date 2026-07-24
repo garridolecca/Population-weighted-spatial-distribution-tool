@@ -1,0 +1,3 @@
+## 2026-07-24 - Optimize arcgis FeatureLayer queries with out_fields
+**Learning:** By default, `arcgis.features.FeatureLayer.query()` returns all fields, which can cause significant performance bottlenecks when downloading large datasets like Census blocks over the network. Furthermore, `returnGeometry` defaults to `True`, meaning we can safely restrict `out_fields` to only the specific attributes we need (e.g., population) without losing the spatial geometry required for intersections.
+**Action:** Always restrict `out_fields` in `FeatureLayer` queries to only the required attributes when querying external web services to minimize payload size and improve execution speed.
