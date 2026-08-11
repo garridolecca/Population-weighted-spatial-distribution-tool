@@ -96,7 +96,13 @@ class DistributePointsByPopulation:
                 
                 gis = GIS("pro")
                 web_layer = FeatureLayer(web_census_url)
-                queried_featureset = web_layer.query(geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'})
+                # ⚡ Bolt Performance Optimization: Restrict out_fields to only the required population field.
+                # This significantly reduces the network payload and memory usage for wide census datasets.
+                # The spatial geometry is safely included since returnGeometry defaults to True.
+                queried_featureset = web_layer.query(
+                    geometry_filter={'geometry': extent_dict, 'spatialRel': 'esriSpatialRelIntersects'},
+                    out_fields=population_field
+                )
                 
                 if len(queried_featureset.features) == 0:
                     messages.addError("The web query returned no features for the given extent. Tool cannot continue.")
