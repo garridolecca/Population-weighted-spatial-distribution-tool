@@ -1,0 +1,3 @@
+## 2026-10-05 - Optimize ArcGIS FeatureLayer.query() Payload
+**Learning:** The default behavior of `arcgis.features.FeatureLayer.query()` fetches all fields. This is inefficient for datasets like census blocks which contain many fields, especially if we only need one specific population field. However, since the API automatically includes geometry (`returnGeometry=True` by default), we can safely restrict fields without breaking the required spatial intersection.
+**Action:** When performing a remote query to get a featureset for local geographic processing, always specify `out_fields` to significantly reduce network payload.
